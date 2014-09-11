@@ -113,7 +113,6 @@ int main(int argc, char* argv[])
 				Log.puts("Prober: could not open port\n");
 				return 4;
 			}
-
 		Log.flush();
 
 		// --- call command interpreter -----------------------
