@@ -1,17 +1,8 @@
-SW version del 10 settembre 2014
+master SW version - 10 Sept 2014
 
+Changes made:
 
-Modifiche effettuate:
-
-11 Settembre 2014
-
-cmd.cpp e cmd_wafertest.cpp configurate per le nuove funzioni:
-init_testdiced ,  testdiced . 
-
-rimosso 'return true/false' perché ora i cmd sono void.. controllare se va bene.
-
-aggiunti controlli su prober number per Alessi.
-non aggiunte modifiche relative a phscan e dacdac.
-
-sync con gitHub..!!
+- Sept 11th 2014
+cmd.cpp & cmd_wafertest.cpp with new functions: init_testdiced ,  testdiced . 
+control on prober number added in order to use the Alessi probestation.
 
