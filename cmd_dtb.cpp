@@ -277,6 +277,9 @@ CMD_PROC(boardid)
 
 CMD_PROC(init)
 {
+	CSettings s;
+	if (s.Read("psi46test.ini")) settings = s;
+	else printf("error reload \"psi46test.ini\"\n");
 	tb.Init();
 	DO_FLUSH
 }
@@ -290,7 +293,6 @@ CMD_PROC(clear)
 {
 	tb.Clear();
 }
-
 
 
 
@@ -648,19 +650,39 @@ CMD_PROC(rocaddr)
 CMD_PROC(d1)
 {
 	int sig;
-	PAR_INT(sig, 0, 31)
+	PAR_INT(sig, 0, 255)
 	tb.SignalProbeD1(sig);
 	DO_FLUSH
 }
 
-
 CMD_PROC(d2)
 {
 	int sig;
-	PAR_INT(sig, 0, 31)
+	PAR_INT(sig, 0, 255)
 	tb.SignalProbeD2(sig);
 	DO_FLUSH
 }
+
+CMD_PROC(ds1)
+{
+	int deser;
+	int sig;
+	PAR_INT(deser, 0, 3)
+	PAR_INT(sig, 0, 255)
+	tb.SignalProbeDeserD1(deser, sig);
+	DO_FLUSH
+}
+
+CMD_PROC(ds2)
+{
+	int deser;
+	int sig;
+	PAR_INT(deser, 0, 3)
+	PAR_INT(sig, 0, 255)
+	tb.SignalProbeDeserD2(deser, sig);
+	DO_FLUSH
+}
+
 
 CMD_PROC(a1)
 {
@@ -719,6 +741,56 @@ CMD_PROC(pgloop)
 	int period;
 	PAR_INT(period,0,65535)
 	tb.Pg_Loop(period);
+	DO_FLUSH
+}
+
+// === Trigger ==============================================================
+
+CMD_PROC(trgsel)
+{
+	int bitmask;
+	PAR_INT(bitmask, 0, 0x1000);
+	tb.Trigger_Select(bitmask);
+	DO_FLUSH
+}
+
+CMD_PROC(trgdelay)
+{
+	int delay;
+	PAR_INT(delay, 0, 255);
+	tb.Trigger_Delay(delay);
+	DO_FLUSH
+}
+
+CMD_PROC(trgtimeout)
+{
+	int timeout;
+	PAR_INT(timeout, 0, 65535);
+	tb.Trigger_Timeout(timeout);
+	DO_FLUSH
+}
+
+CMD_PROC(trgper)
+{
+	int period;
+	PAR_INT(period, 0, 0x7fffffff);
+	tb.Trigger_SetGenPeriodic(period);
+	DO_FLUSH
+}
+
+CMD_PROC(trgrand)
+{
+	int rate;
+	PAR_INT(rate, 0, 0x7fffffff);
+	tb.Trigger_SetGenRandom(rate);
+	DO_FLUSH
+}
+
+CMD_PROC(trgsend)
+{
+	int bitmask;
+	PAR_INT(bitmask, 0, 31);
+	tb.Trigger_Send(bitmask);
 	DO_FLUSH
 }
 
@@ -991,6 +1063,101 @@ CMD_PROC(dreada)
 }
 
 
+// === DESER400 =============================================================
+
+CMD_PROC(dsena)
+{
+	int deser;
+	PAR_INT(deser, 0, 3)
+	tb.Deser400_Enable(deser);
+	DO_FLUSH
+}
+
+CMD_PROC(dsdis)
+{
+	int deser;
+	PAR_INT(deser, 0, 3)
+	tb.Deser400_Disable(deser);
+	DO_FLUSH
+}
+
+CMD_PROC(dsdisall)
+{
+	tb.Deser400_DisableAll();
+	DO_FLUSH
+}
+
+CMD_PROC(dssetph)
+{
+	int deser, phase;
+	PAR_INT(deser, 0, 3)
+	PAR_INT(phase, 0, 15)
+	tb.Deser400_SetPhase(deser, phase);
+	DO_FLUSH
+}
+
+CMD_PROC(dsauto)
+{
+	int deser;
+	PAR_INT(deser, 0, 3)
+	tb.Deser400_SetPhaseAuto(deser);
+	DO_FLUSH
+}
+
+CMD_PROC(dsautoall)
+{
+	tb.Deser400_SetPhaseAutoAll();
+	DO_FLUSH
+}
+
+CMD_PROC(dsgetxor)
+{
+	int deser;
+	PAR_INT(deser, 0, 3)
+	unsigned int xorbyte = tb.Deser400_GetXor(deser);
+
+	char s[9];
+	for (int i=0; i<8; i++)
+	{
+		s[i] = (xorbyte & 0x80) ? 'X' : '.';
+		xorbyte <<= 1;
+	}
+	s[8] = 0;
+	xorbyte >>= 8;
+	printf(" %02X  %s\n", xorbyte, s);
+}
+
+CMD_PROC(dsgetph)
+{
+	int deser;
+	PAR_INT(deser, 0, 3)
+	unsigned int phase = tb.Deser400_GetPhase(deser);
+	printf(" phase = %u\n", phase);
+}
+
+CMD_PROC(gaterun)
+{
+	int width, period;
+	PAR_INT(width, 0, 7)
+	PAR_INT(period, 0, 7)
+	tb.Deser400_GateRun(width, period);
+	DO_FLUSH
+}
+
+CMD_PROC(gatesingle)
+{
+	int width;
+	PAR_INT(width, 0, 7)
+	tb.Deser400_GateSingle(width);
+	DO_FLUSH
+}
+
+CMD_PROC(gatestop)
+{
+	tb.Deser400_GateStop();
+	DO_FLUSH
+}
+
 
 // =======================================================================
 //  tbm commands
@@ -1048,12 +1215,16 @@ CMD_PROC(tbmgetraw)
 	int reg;
 	uint32_t value;
 	PAR_INT(reg,0,255);
-	if (tb.tbm_GetRaw(reg,value))
-	{
-		printf("value=0x%02X (Hub=%2i; Port=%i; Reg=0x%02X; inv=0x%X; stop=%c)\n",
-			value & 0xff, (value>>19)&0x1f, (value>>16)&0x07,
-			(value>>8)&0xff, (value>>25)&0x1f, (value&0x1000)?'1':'0');
-	} else puts("error\n");
+	tb.tbm_GetRaw(reg,value);
+	printf("value = 0x%04X\n", value);
+
+//	if (tb.tbm_GetRaw(reg,value))
+//	{
+//		printf("value = 0x%04X\n", value);
+//		printf("value=0x%02X (Hub=%2i; Port=%i; Reg=0x%02X; inv=0x%X; stop=%c)\n",
+//			value & 0xff, (value>>19)&0x1f, (value>>16)&0x07,
+//			(value>>8)&0xff, (value>>25)&0x1f, (value&0x1000)?'1':'0');
+//	} else puts("error\n");
 }
 
 /*
@@ -1189,6 +1360,16 @@ CMD_PROC(dac)
 	DO_FLUSH
 }
 
+CMD_PROC(vdig)
+{
+	int value;
+	PAR_INT(value,0,15)
+	for (int i=0; i<16; i++) if (roclist[i])
+	{ tb.roc_I2cAddr(i); tb.roc_SetDAC(Vdig, value); }
+
+	DO_FLUSH
+}
+
 CMD_PROC(vana)
 {
 	int value;
@@ -1229,12 +1410,42 @@ CMD_PROC(vcal)
 	DO_FLUSH
 }
 
+CMD_PROC(caldel)
+{
+	int value;
+	PAR_INT(value,0,255)
+	for (int i=0; i<16; i++) if (roclist[i])
+	{ tb.roc_I2cAddr(i); tb.roc_SetDAC(CalDel, value); }
+
+	DO_FLUSH
+}
+
 CMD_PROC(wbc)
 {
 	int value;
 	PAR_INT(value,0,255)
 	for (int i=0; i<16; i++) if (roclist[i])
 	{ tb.roc_I2cAddr(i);  tb.roc_SetDAC(WBC, value); }
+
+	DO_FLUSH
+}
+
+CMD_PROC(adcoffset)
+{
+	int value;
+	PAR_INT(value,0,255)
+	for (int i=0; i<16; i++) if (roclist[i])
+	{ tb.roc_I2cAddr(i);  tb.roc_SetDAC(17, value); }
+
+	DO_FLUSH
+}
+
+CMD_PROC(adcref)
+{
+	int value;
+	PAR_INT(value,0,255)
+	for (int i=0; i<16; i++) if (roclist[i])
+	{ tb.roc_I2cAddr(i);  tb.roc_SetDAC(20, value); }
 
 	DO_FLUSH
 }

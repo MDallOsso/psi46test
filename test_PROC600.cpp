@@ -22,9 +22,9 @@
 #define VDIG0               4
 #define VSH0              150   // 225
 
+#define MAX_TIME_BUFFER    56   // number of timestamp buffers
 
-
-namespace TestRocDig
+namespace TestPROC600
 {
 
 // =======================================================================
@@ -50,22 +50,17 @@ void InitDAC(bool reset)
 
 	tb.roc_SetDAC(  1,  VDIG0); // Vdig
 	tb.roc_SetDAC(  2,  g_chipdata.InitVana);
-	tb.roc_SetDAC(  3,  30);    // Vsf
+	tb.roc_SetDAC(  3,   8);    // *new* Iph (new 4 bit, previously Vsf)
 	tb.roc_SetDAC(  4,  12);    // Vcomp
 
 	tb.roc_SetDAC(  7, 150);    // VwllPr
 	tb.roc_SetDAC(  9, 150);    // VwllSh
-	tb.roc_SetDAC( 10, 117);    // VhldDel
 	tb.roc_SetDAC( 11,  40);    // Vtrim
 	tb.roc_SetDAC( 12,  80);    // VthrComp
 
-	tb.roc_SetDAC( 13,  30);    // VIBias_Bus
-//	tb.roc_SetDAC( 14,   6);    // Vbias_sf
-	tb.roc_SetDAC( 22,  99);    // VIColOr
+	tb.roc_SetDAC( 13, 100);    // *new* VColor (previously VIBias_Bus)
 
-//	tb.roc_SetDAC( 15,  40);    // VoffsetOp
-	tb.roc_SetDAC( 17, 170);    // VoffsetRO
-//	tb.roc_SetDAC( 18, 115);    // VIon
+	tb.roc_SetDAC( 17, 125);    // *new* VoffsetRO (previously default: 170)
 
 	tb.roc_SetDAC( 19,  50);    // Vcomp_ADC
 	tb.roc_SetDAC( 20,  90);    // VIref_ADC
@@ -74,7 +69,7 @@ void InitDAC(bool reset)
 	tb.roc_SetDAC( 26,  g_chipdata.InitCalDel);  // CalDel
 
 	tb.roc_SetDAC( 0xfe, 14);   // WBC
-	tb.roc_SetDAC( 0xfd,  4);   // CtrlReg
+	tb.roc_SetDAC( 0xfd, 0x0c); // *new* CtrlReg (trigger output control)
 
 	tb.Flush();
 }
@@ -97,7 +92,7 @@ void SetMHz(int MHz = 0)
 	tb.Sig_SetDelay(SIG_TIN,  settings.deser160_clkDelay+5);
 	tb.Flush();
 
-	tct_wbc = 5;
+	tct_wbc = 4;
 }
 
 
@@ -137,7 +132,6 @@ int test_startup(bool probecard)
 
 	g_chipdata.IdigInit = Idig = tb.GetID()*1000.0;
 	Log.printf("Idig=%6.2lf mA\n", Idig);
-
 	g_chipdata.IanaInit = Iana = tb.GetIA()*1000.0;
 	Log.printf("Iana=%6.2lf mA\n", Iana);
 
@@ -162,7 +156,7 @@ int test_startup(bool probecard)
 		tb.GetVDAC_Reg(); tb.GetVDAC_Reg(); tb.GetVDAC_Reg(); tb.GetVDAC_Reg();
         g_chipdata.probecard.v_dac = tb.GetVDAC_Reg();
         Log.section("VDAC", false);
-        Log.printf("%5.3f\n", g_chipdata.probecard.v_dac); 
+        Log.printf("%5.3f\n", g_chipdata.probecard.v_dac);
 
 		g_chipdata.probecard.v_tout = 0; // tb.GetTOUT_COM();
 		Log.section("VTOUT", false);
@@ -547,7 +541,7 @@ void test_current()
     Log.section("ITRIM", false);
     Log.printf("%i %1.2lf mA\n", g_chipdata.InitVana, g_chipdata.InitIana);
     InitDAC();
-} 
+}
 
 
 
@@ -573,7 +567,7 @@ void test_pixel()
 
 	CDtbSource src;
 	CDataRecordScannerROC raw;
-	CRocDigDecoder dec;
+	CRocDigLinearDecoder dec;
 	CSink<CEvent*> data;
 	src >> raw >> dec >> data;
 
@@ -649,9 +643,9 @@ void test_pulse_height1()
 	InitDAC();
 
 	// load individual settings
-	tb.roc_SetDAC(CtrlReg, 0);
+//	tb.roc_SetDAC(CtrlReg, 0);
 	tb.roc_SetDAC(Vcal, PULSE_VCAL1);
-	tb.roc_SetDAC(CtrlReg, 0x04);
+	tb.roc_SetDAC(CtrlReg, 13);
 
 	tb.Pg_SetCmd(0, PG_RESR + 25);
 	tb.Pg_SetCmd(1, PG_CAL  + 15 + tct_wbc);
@@ -663,7 +657,7 @@ void test_pulse_height1()
 
 	CDtbSource src;
 	CDataRecordScannerROC raw;
-	CRocDigDecoder dec;
+	CRocDigLinearDecoder dec;
 	CSink<CEvent*> data;
 	src >> raw >> dec >> data;
 
@@ -726,7 +720,7 @@ void test_pulse_height2()
 
 	CDtbSource src;
 	CDataRecordScannerROC raw;
-	CRocDigDecoder dec;
+	CRocDigLinearDecoder dec;
 	CSink<CEvent*> data;
 	src >> raw >> dec >> data;
 
@@ -781,7 +775,7 @@ void test_pulseheight()
 	int col = 10, row = 10;
 	InitDAC();
 	tb.roc_SetDAC(Vcal, VCAL_TEST);
-	tb.roc_SetDAC(CtrlReg,0x04); // 0x04
+	tb.roc_SetDAC(CtrlReg,0x0c); // 0x04
 
 	if (g_chipdata.pixmap.GetUnmaskedCount(col, row) == 0) col += 2;
 	if (g_chipdata.pixmap.GetUnmaskedCount(col, row) == 0) col += 2;
@@ -793,8 +787,8 @@ void test_pulseheight()
 	const int vcalmax = 140;
 
 	tb.Pg_Stop();
-	tb.Pg_SetCmd(0, PG_RESR + 15);
-	tb.Pg_SetCmd(1, PG_CAL  + 20);
+	tb.Pg_SetCmd(0, PG_RESR + 25);
+	tb.Pg_SetCmd(1, PG_CAL  + 15 + tct_wbc);
 	tb.Pg_SetCmd(2, PG_TRG  + 16);
 	tb.Pg_SetCmd(3, PG_TOK);
 
@@ -965,7 +959,7 @@ int test_PUCs(bool forceDefTest = false)
 
 	CDtbSource src;
 	CDataRecordScannerROC raw;
-	CRocDigDecoder dec;
+	CRocDigLinearDecoder dec;
 	CSink<CEvent*> data;
 	src >> raw >> dec >> data;
 	src.OpenRocDig(tb, settings.deser160_tinDelay, false, 10000);
@@ -1150,6 +1144,140 @@ int test_PUCsC(bool forceDefTest = false)
 	return 0;
 }
 
+// =======================================================================
+//
+//    DC Buffer Test
+//
+// =======================================================================
+
+void test_DCbuffer()
+{PROFILING
+
+	InitDAC();
+	// load settings
+	tb.roc_Chip_Mask();
+	tb.roc_SetDAC(Vcal, VCAL_DCOL_TEST);
+	tb.roc_SetDAC(CtrlReg, 0x04); // 0x04
+	unsigned char col, row;
+	CDtbSource src;
+	CDataRecordScannerROC raw;
+	CRocDigDecoder dec;
+	CSink<CEvent*> data;
+	src >> raw >> dec >> data;
+
+	Log.section("DCBUFFER");
+
+	//Injection pattern needs to be scanned in a loop to test all buffers. Maybe finally only last buffer is sufficient
+	for (int bufferInTest = 0; bufferInTest < MAX_TIME_BUFFER; bufferInTest++){
+		//std::cout << "test buffer number " << bufferInTest << std::endl;
+		//tb.Pg_SetCmd(0, PG_RESR + 25);
+		////Inject until buffer in test -1 to fill the buffers
+		//for (int i = 0; i < bufferInTest; i++)
+		//	tb.Pg_SetCmd(1, PG_CAL + 15);
+		////Inject into buffer in test and then wait WBC, trigger, token
+		//tb.Pg_SetCmd(1, PG_CAL + 15 + tct_wbc);
+		//tb.Pg_SetCmd(2, PG_TRG + 16);
+		//tb.Pg_SetCmd(3, PG_TOK);
+		tb.uDelay(100);
+		tb.Flush();
+
+		src.OpenRocDig(tb, settings.deser160_tinDelay, false, 100000);
+		src.Enable();
+		tb.uDelay(100);
+
+		// --- scan four pixels per double column --------------------------------
+		for (col = 0; col < ROC_NUMCOLS; col=col+2)
+		{
+			//enable the column in test
+			tb.roc_Col_Enable(col, true);
+			tb.roc_Col_Enable(col+1, true);
+			tb.uDelay(10);
+			
+			//enable the four pixels to be used for test.
+			for (row = 20; row < 22; row++)
+			{
+				// set pixel calibrate pulse at col, row. Sensor calib pulse: false
+				tb.roc_Pix_Trim(col, row, 15);
+				tb.roc_Pix_Trim(col+1, row, 15);
+				tb.roc_Pix_Cal(col, row, false);
+				tb.roc_Pix_Cal(col+1, row, false);
+				tb.uDelay(20);
+			}
+
+			tb.Pg_Stop();
+			//reset once
+			tb.Pg_SetCmd(0, PG_RESR + 25);
+			tb.Pg_SetCmd(1, 0x0000 + 50);
+			tb.Pg_SetCmd(2, 0x0000 + 16);
+			tb.Pg_SetCmd(3, 0x0000);
+			tb.Pg_Single();
+			//prepare pattern with injection only
+			tb.Pg_SetCmd(0, 0x0000 + 25);
+			tb.Pg_SetCmd(1, PG_CAL + 50);
+			tb.Pg_SetCmd(2, 0x0000 + 16);
+			tb.Pg_SetCmd(3, 0x0000);
+			//Inject until buffer in test -1 to fill the buffers
+			for (int i = 0; i < bufferInTest; i++)
+				tb.Pg_Single();
+			//Issue injection into buffer under test and trigger + token
+			tb.Pg_SetCmd(0, 0x0000 + 25); 
+			tb.Pg_SetCmd(1, PG_CAL + 15 + tct_wbc);
+			tb.Pg_SetCmd(2, PG_TRG + 16);
+			tb.Pg_SetCmd(3, PG_TOK);
+			tb.Pg_Single();
+			tb.uDelay(10);
+				
+			//mask the four pixels again
+			for (row = 20; row < 22; row++)
+				tb.roc_Pix_Mask(col, row);
+				tb.roc_Pix_Mask(col+1, row);
+			//clear cal
+			tb.roc_ClrCal();
+
+			//disable the full column after test
+			tb.roc_Col_Enable(col, false);
+			tb.roc_Col_Enable(col+1, false);
+			tb.uDelay(10);
+		}
+		src.Disable();
+
+
+		// --- analyze data --------------------------------------------------------
+		// data analysis to be implemented. So far just quick test
+		try
+		{
+
+			std::stringstream ss;
+			for (col = 0; col<ROC_NUMCOLS/2; col++)
+			{
+				//get the next event and set nHits to size of event.
+				CEvent *ev = data.Get();
+				int nHits = ev->roc[0].pixel.size();
+
+				if (nHits == 4) 
+					ss << "." << " "; 
+				else 
+					ss << nHits << " ";		
+			}
+			ss << endl;
+			Log.puts(ss.str());
+		}
+		catch (DataPipeException e) { printf("\nERROR DC Buffer Test: %s\n", e.what()); }
+		src.Close();
+	}
+	
+	tb.roc_SetDAC(CtrlReg, 0);
+}
+
+
+
+
+
+
+
+
+
+
 
 // =======================================================================
 //
@@ -1238,8 +1366,13 @@ int test_roc(bool &repeat)
 	}
 
 //	test_DCOLs();
+//	}
+
+//	test_DCOLs();
 
 	test_PUCsC(pixcnt<500);
+
+	test_DCbuffer();
 
 	// --- Testresultat auswerten ------------------------------
 
@@ -1398,9 +1531,6 @@ int test_roc_bumpbonder()
 
 	if (                              70.0 < g_chipdata.IdigOn)   goto fail;
 	if (                              10.0 < g_chipdata.IanaOn)   goto fail;
-	if (g_chipdata.IdigInit < 10.0 || 50.0 < g_chipdata.IdigInit) goto fail;
-	if (g_chipdata.IanaInit <  8.0 || 60.0 < g_chipdata.IanaInit) goto fail;
-
 	// --- class 3 ----------------------------------------------------------
 	chipClass = 3;
 
@@ -1422,4 +1552,4 @@ fail:
 
 
 
-} // namespace TestRocDig
+} // namespace TestPROC600

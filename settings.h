@@ -5,17 +5,17 @@
 
 #include <stdio.h>
 #include <string>
+#include <vector>
 #include "config.h"
 #include "file.h"
+#include "chipdatabase.h"
 
-
-#define NUMSETTING 3
 
 class CSettings
 {
 	CFileBuffer f;
 	static bool IsNumber(char ch) { return '0' <= ch && ch <= '9'; }
-	static bool IsAlpha(char ch) { return ('a' <= ch && ch <= 'z') || ('A' <= ch && ch <= 'Z') || (ch == '_'); }
+	static bool IsAlpha(char ch) { return ('a' <= ch && ch <= 'z') || ('A' <= ch && ch <= 'Z') || (ch == '_') || (ch == '.'); }
 	static bool IsAlphaNum(char ch) { return IsAlpha(ch) || IsNumber(ch); }
 	static bool IsWhitespace(char ch) { return (ch == ' ') || (ch == '\t') || (ch == '\n') || (ch == '\r'); }
 	void SkipWhitespace();
@@ -26,8 +26,11 @@ class CSettings
 	bool ReadBool();
 	int  ReadInt(int min, int max);
 	void ReadString(std::string &s);
+	void ReadWaferMask();
+	void ReadWaferExclude();
+	void Init();
 public:
-	CSettings();
+	CSettings() { Init(); }
 	bool Read(const char filename[]);
 
 // --- data --------------------------------------------------------------
@@ -36,7 +39,7 @@ public:
 
 	int  proberPort;	    // prober serial port nr (-1 = no prober)
 
-	int rocType;            // 0 = analog ROC, 1 = digital ROC
+	int rocType;            // 0 = analog ROC, 1 = digital ROC, 2 = PROC600
 	bool sensor; 		    // sensor mounted
 
 	// cable length:           5   48  prober 450 cm  bump bonder
@@ -49,6 +52,11 @@ public:
 	int cableLength;        // adapter cable length in mm
 
 	int  errorRep;          // # test rep if defect chip
+
+	std::string waferList;
+	bool IsWaferList() { return waferList.length() != 0; }
+	std::string waferMask;
+	std::vector<CChipPos> waferExclude;
 };
 
 

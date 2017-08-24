@@ -36,7 +36,6 @@ CMD_REG(init, "", "inits the testboard")
 CMD_REG(flush, "", "flushes usb buffer")
 CMD_REG(clear, "", "clears usb data buffer")
 
-
 // =======================================================================
 //  delay commands
 // =======================================================================
@@ -89,6 +88,8 @@ CMD_REG(status, "", "shows testboard status")
 CMD_REG(rocaddr, "", "set ROC address")
 CMD_REG(d1, "<signal>", "assign signal to D1 output")
 CMD_REG(d2, "<signal>", "assign signal to D2 outout")
+CMD_REG(ds1, "<deser> <signal>", "assign deser signal to D1 output")
+CMD_REG(ds2, "<deser> <signal>", "assign deser signal to D2 outout")
 CMD_REG(a1, "<signal>", "assign analog signal to A1 output")
 CMD_REG(a2, "<signal>", "assign analog signal to A2 outout")
 CMD_REG(probeadc, "<signal>", "assign analog signal to ADC")
@@ -97,6 +98,17 @@ CMD_REG(pgstop, "", "stops pattern generator")
 CMD_REG(pgsingle, "", "send single pattern")
 CMD_REG(pgtrig, "", "enable external pattern trigger")
 CMD_REG(pgloop, "<period>", "start patterngenerator in loop mode")
+
+// === Trigger ==============================================================
+
+HELP_CAT("trigger")
+
+CMD_REG(trgsel, "<bitmask>", "Select trigger source")
+CMD_REG(trgdelay, "<delay>", "Set trigger delay in clock cycles")
+CMD_REG(trgtimeout, "<timeout>", "Set max readout length")
+CMD_REG(trgper, "<period>", "Chose periodic trigger generator")
+CMD_REG(trgrand, "<rate>", "Chose random trigger generator")
+CMD_REG(trgsend, "<bitmask>", "Send single trigger signal")
 
 // === DAQ ==================================================================
 
@@ -117,6 +129,22 @@ CMD_REG(dselroc, "<value>", "select deser160 for DAQ channel 0");
 CMD_REG(dselroca, "<value>", "select adc for channel 0");
 CMD_REG(dselsim, "<startvalue>", "select data generator for channel 0");
 CMD_REG(dseloff, "", "deselect all");
+
+// === DESER400 ==========================================================
+
+HELP_CAT("deser400")
+
+CMD_REG(dsena, "<deser>", "Enable deser 0..3")
+CMD_REG(dsdis, "<deser>", "Disable deser 0..3")
+CMD_REG(dsdisall, "", "Disable all deser")
+CMD_REG(dssetph, "<deser> <phase>", "Switch deser in manual mode and set fixed phase")
+CMD_REG(dsauto, "<deser>", "Switch deser in auto phase mode")
+CMD_REG(dsautoall, "", "Switch all deser in auto phase mode")
+CMD_REG(dsgetxor, "<deser>", "Read deser xor sum")
+CMD_REG(dsgetph, "<deser>", "Read deser phase")
+CMD_REG(gaterun, "<width> <periode>", "Switch gate in running mode")
+CMD_REG(gatesingle, "<width>", "Stop gate running mode and start single pulse")
+CMD_REG(gatestop, "", "Stop gate running mode")
 
 
 // =======================================================================
@@ -139,10 +167,14 @@ HELP_CAT("roc")
 
 CMD_REG(select, "<addr range>", "set i2c address")
 CMD_REG(dac, "<address> <value>", "set DAC")
+CMD_REG(vdig, "<value>", "set Vdig")
 CMD_REG(vana, "<value>", "set Vana")
 CMD_REG(vtrim, "<value>", "set Vtrim")
 CMD_REG(vthr, "<value>", "set VthrComp")
 CMD_REG(vcal, "<value>", "set Vcal")
+CMD_REG(caldel, "<value>", "set cal delay")
+CMD_REG(adcref, "<value>", "ADC reference")
+CMD_REG(adcoffset, "<value>", "ADC offset")
 CMD_REG(wbc, "<value>", "set WBC")
 CMD_REG(ctl, "<value>", "set control register")
 CMD_REG(cole, "<range>", "enable column")

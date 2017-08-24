@@ -181,13 +181,16 @@
     <ClCompile Include="rpc.cpp" />
     <ClCompile Include="rpc_calls.cpp" />
     <ClCompile Include="rpc_error.cpp" />
+    <ClCompile Include="test.cpp" />
     <ClCompile Include="test_ana.cpp" />
     <ClCompile Include="test_dig.cpp" />
+    <ClCompile Include="test_PROC600.cpp" />
     <ClCompile Include="usb.cpp">
       <AssemblerOutput Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">All</AssemblerOutput>
     </ClCompile>
     <ClCompile Include="scanner.cpp" />
     <ClCompile Include="settings.cpp" />
+    <ClCompile Include="waferlist.cpp" />
     <ClCompile Include="win32\rs232.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -216,6 +219,7 @@
     <ClInclude Include="rpc_error.h" />
     <ClInclude Include="rpc_io.h" />
     <ClInclude Include="usb.h" />
+    <ClInclude Include="waferlist.h" />
     <ClInclude Include="win32\FTD2XX.H" />
     <ClInclude Include="histo.h" />
     <ClInclude Include="protocol.h" />

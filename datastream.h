@@ -69,21 +69,26 @@ public:
 
 struct CRocPixel
 {
-// error bits:{ R5 || R4 | R3 | R2 | R1 || ph | x | y | c1 || c0 | r2 | r1 | r0 }
+	// error bits:{ ph | x | y | c1 | c0 | r2 | r1 | r0 }
 	int error;
+
 	int raw;
 	int x;
 	int y;
 	int ph;
-	void DecodeRaw();
-	void DecodeAna(CAnalogLevelDecoder &dec, uint16_t *x);
+	void DecodeRaw(); // PSI46dig
+	void DecodeRawLinear(); // PROC600
+	void DecodeAna(CAnalogLevelDecoder &dec, uint16_t *x); // PSI46 analog
 };
 
 
 struct CRocEvent
 {
-// error bits:{ pixel }
+	/* error bits:
+		0: pixel error
+	*/
 	unsigned int error;
+
 	unsigned short header;
 	vector<CRocPixel> pixel;
 };
@@ -92,9 +97,32 @@ struct CRocEvent
 struct CEvent
 {
 	unsigned int recordNr;
-// error bits:{ h0 | h1 | h2 | h3 || t0 | t1 | t2 | t3 || 0 | 0 | 0 | pixel }
+
+	/* error bits:
+		 0: pixel error
+		 1: missing TBM trailer or ROC header after TBM header
+		 2: missing TBM trailer before idle pattern
+		 3: code error during event data transmission
+		 4: frame error during event data transmission
+		 5: TBM trailer error
+		 6:
+		 7:
+		 8: T1 missing
+		 9: T0 missing
+		10: H1 missing
+		11: H0 missing
+	*/
 	int error;
-	enum DeviceType { ROCD, ROCA, MODD, MODA } deviceType;
+
+	/*
+		ROCA  PSI46 single ROC
+		ROCD  PSI46dig single ROC
+		ROCX  PROC600 single ROC
+		MODA  PSI46 module (analog)
+		MODD  PSI46dig module
+		MODX  PROC600 module
+	*/
+	enum DeviceType { ROCX, ROCD, ROCA, MODX, MODD, MODA } deviceType;
 	unsigned short header;
 	unsigned short trailer;
 	vector<CRocEvent> roc;
@@ -141,7 +169,7 @@ public:
 		bool endless = true, unsigned int dtbBufferSize = 5000000);
 	bool OpenRocDig(CTestboard &dtb, uint8_t deserAdjust,
 		bool endless = true, unsigned int dtbBufferSize = 5000000);
-	bool OpenModDig(CTestboard &dtb, bool endless = true, unsigned int dtbBufferSize = 5000000);
+	bool OpenModDig(CTestboard &dtb, unsigned int channel, bool endless = true, unsigned int dtbBufferSize = 5000000);
 	bool OpenSimulator(CTestboard &dtb,
 		bool endless = true, unsigned int dtbBufferSize = 5000000);
 
@@ -309,17 +337,8 @@ public:
 };
 
 
-// === CRocDigDecoder (CDataRecord*, CEvent*) ============================
-
-class CRocDigDecoder : public CDataPipe<CDataRecord*, CEvent*>
-{
-	CEvent x;
-	CEvent* Read();
-	CEvent* ReadLast() { return &x; }
-};
-
-
 // === CRocAnaDecoder (CDataRecord*, CEvent*) ============================
+// PSI46 analog
 
 class CRocAnaDecoder : public CDataPipe<CDataRecord*, CEvent*>
 {
@@ -330,6 +349,27 @@ class CRocAnaDecoder : public CDataPipe<CDataRecord*, CEvent*>
 public:
 	void Calibrate(int ublackLevel, int blackLevel)
 	{ dec.Calibrate(ublackLevel, blackLevel); }
+};
+
+
+// === CRocDigDecoder (CDataRecord*, CEvent*) ============================
+// PSI46dig
+
+class CRocDigDecoder : public CDataPipe<CDataRecord*, CEvent*>
+{
+	CEvent x;
+	CEvent* Read();
+	CEvent* ReadLast() { return &x; }
+};
+
+// === CRocDigLinearDecoder (CDataRecord*, CEvent*) ============================
+// PROC600
+
+class CRocDigLinearDecoder : public CDataPipe<CDataRecord*, CEvent*>
+{
+	CEvent x;
+	CEvent* Read();
+	CEvent* ReadLast() { return &x; }
 };
 
 
@@ -346,6 +386,16 @@ class CModDigDecoder_old : public CDataPipe<CDataRecord*, CEvent*>
 // === CModDigDecoder (CDataRecord*, CEvent*) ============================
 
 class CModDigDecoder : public CDataPipe<CDataRecord*, CEvent*>
+{
+	CEvent x;
+	CEvent* Read();
+	CEvent* ReadLast() { return &x; }
+};
+
+
+// === CModDigLinearDecoder (CDataRecord*, CEvent*) ======================
+
+class CModDigLinearDecoder : public CDataPipe<CDataRecord*, CEvent*>
 {
 	CEvent x;
 	CEvent* Read();
